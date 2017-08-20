@@ -44,7 +44,7 @@ testset = datasets.ImageFolder("../raw_test_resized", transform_train)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=2)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
 
-net = GoogLeNet()
+net = DenseNet121()
 
 if use_cuda:
     net.cuda()
@@ -112,6 +112,13 @@ def test(epoch):
             os.mkdir('checkpoint')
         torch.save(state, './checkpoint/ckpt.t7')
         best_acc = acc
+'''
+batch_idx, (inputs, targets) = next(enumerate(testloader))
+inputs, targets = inputs.cuda(), targets.cuda()
+inputs, targets = Variable(inputs, volatile=True), Variable(targets)
+print("before before: ", inputs.size())
+outputs = net(inputs)
+'''
 
 
 for epoch in range(start_epoch, start_epoch+10):
