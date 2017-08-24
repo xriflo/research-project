@@ -36,7 +36,7 @@ class Transition(nn.Module):
 
 
 class DenseNet(nn.Module):
-    def __init__(self, block, nblocks, growth_rate=12, reduction=0.5, num_classes=3):
+    def __init__(self, block, nblocks, growth_rate=12, reduction=0.5, num_classes=2):
         super(DenseNet, self).__init__()
         self.growth_rate = growth_rate
 
@@ -49,23 +49,9 @@ class DenseNet(nn.Module):
         self.trans1 = Transition(num_planes, out_planes)
         num_planes = out_planes
 
-        '''
-        self.dense2 = self._make_dense_layers(block, num_planes, nblocks[1])
-        num_planes += nblocks[1]*growth_rate
-        out_planes = int(math.floor(num_planes*reduction))
-        self.trans2 = Transition(num_planes, out_planes)
-        num_planes = out_planes
 
-        
-        self.dense3 = self._make_dense_layers(block, num_planes, nblocks[2])
-        num_planes += nblocks[2]*growth_rate
-        out_planes = int(math.floor(num_planes*reduction))
-        self.trans3 = Transition(num_planes, out_planes)
-        num_planes = out_planes
-        '''
         self.dense4 = self._make_dense_layers(block, num_planes, nblocks[3])
         num_planes += nblocks[3]*growth_rate
-        #print("planes: ", num_planes)
         self.bn = nn.BatchNorm2d(num_planes)
         self.linear = nn.Linear(7680, num_classes)
 
@@ -77,20 +63,13 @@ class DenseNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        #print("before conv1: ", x.size())
         out = self.conv1(x)
-        #print("after conv1: ", out.size())
         out = self.trans1(self.dense1(out))
-        #print("after trans1: ", out.size())
 
         out = self.dense4(out)
-        #print("after dense4: ", out.size())
         out = F.avg_pool2d(F.relu(self.bn(out)), 4)
-        #print("after avg: ", out.size())
         out = out.view(out.size(0), -1)
-        #print("after view: ", out.size())
         out = self.linear(out)
-        #print("after linear: ", out.size())
         return out
 
 def DenseNet121():

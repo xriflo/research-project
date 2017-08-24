@@ -16,6 +16,7 @@ class Inception(nn.Module):
             nn.Conv2d(in_planes, n1x1, kernel_size=1),
             nn.BatchNorm2d(n1x1),
             nn.ReLU(True),
+            nn.Dropout2d(p=0.5),
         )
 
         # 1x1 conv -> 3x3 conv branch
@@ -26,6 +27,7 @@ class Inception(nn.Module):
             nn.Conv2d(n3x3red, n3x3, kernel_size=3, padding=1),
             nn.BatchNorm2d(n3x3),
             nn.ReLU(True),
+            nn.Dropout2d(p=0.5),
         )
 
         # 1x1 conv -> 5x5 conv branch
@@ -39,6 +41,7 @@ class Inception(nn.Module):
             nn.Conv2d(n5x5, n5x5, kernel_size=3, padding=1),
             nn.BatchNorm2d(n5x5),
             nn.ReLU(True),
+            nn.Dropout2d(p=0.5),
         )
 
         # 3x3 pool -> 1x1 conv branch
@@ -47,6 +50,7 @@ class Inception(nn.Module):
             nn.Conv2d(in_planes, pool_planes, kernel_size=1),
             nn.BatchNorm2d(pool_planes),
             nn.ReLU(True),
+            nn.Dropout2d(p=0.5),
         )
 
     def forward(self, x):
@@ -54,48 +58,40 @@ class Inception(nn.Module):
         y2 = self.b2(x)
         y3 = self.b3(x)
         y4 = self.b4(x)
-        #print "y1:           ", y1.size()
-        #print "y2:           ", y2.size()
-        #print "y3:           ", y3.size()
-        #print "y4:           ", y4.size()
+        #print ("y1:           ", y1.size())
+        #print ("y2:           ", y2.size())
+        #print ("y3:           ", y3.size())
+        #print ("y4:           ", y4.size())
         return torch.cat([y1,y2,y3,y4], 1)
 
 
 class GoogLeNet(nn.Module):
     def __init__(self):
+        self.in_planes = 96
+        self.n1x1 = 32
+        self.n3x3red = 48
+        self.n3x3 = 64
+        self.n5x5red = 8
+        self.n5x5 = 16
+        self.pool_planes = 16
+        self.num_classes = 2
+        self.lin_input = (self.n1x1 + self.n3x3 + self.n5x5 + self.pool_planes) * 28 * 36
         super(GoogLeNet, self).__init__()
         self.pre_layers = nn.Sequential(
-            nn.Conv2d(3, 192, kernel_size=3, padding=1),
-            nn.BatchNorm2d(192),
+            nn.Conv2d(3, self.in_planes, kernel_size=3, padding=1),
+            nn.BatchNorm2d(self.in_planes),
             nn.ReLU(True),
         )
-
-        self.a3 = Inception(192,  64,  96, 128, 16, 32, 32)
+      # self.a3 = Inception(  192,        64,     96,         128,    16,         32,     32)
+        self.a3 = Inception(self.in_planes, self.n1x1, self.n3x3red, self.n3x3, self.n5x5red, self.n5x5, self.pool_planes)
         self.maxpool = nn.MaxPool2d(3, stride=2, padding=1)
-        self.linear = nn.Linear(258048, 3)
+        self.linear = nn.Linear(self.lin_input, self.num_classes)
 
     def forward(self, x):
         out = self.pre_layers(x)
-        #print "pre_layers:   ", out.size()
-
-        #print("------------a3-----------")
         out = self.a3(out)
-        #print "after a3:     ", out.size()
-
-        #print("---------maxpool---------")
-        #out = self.maxpool(out)
-        #print "out size:     ", out.size()
         
-        #print("------------fc-----------")
         out = out.view(out.size(0), -1)
-        #print "fc size:      ", out.size()
-
-        #print("------------lin-----------")
         out = self.linear(out)
-        #print "lin size:     ", out.size()
 
-        #print("---------network ends--------")
-
-        
-        
         return out
