@@ -47,9 +47,9 @@ class Bottleneck(nn.Module):
         return out
 
 
-class ShuffleNet(nn.Module):
+class ShuffleNet_net(nn.Module):
     def __init__(self, cfg):
-        super(ShuffleNet, self).__init__()
+        super(ShuffleNet_net, self).__init__()
         out_planes = cfg['out_planes']
         num_blocks = cfg['num_blocks']
         groups = cfg['groups']
@@ -82,18 +82,10 @@ class ShuffleNet(nn.Module):
         return out
 
 
-def ShuffleNetG2():
+def ShuffleNet():
     cfg = {
         'out_planes': [200,400,800],
         'num_blocks': [4,8,4],
         'groups': 2
     }
-    return ShuffleNet(cfg)
-
-def ShuffleNetG3():
-    cfg = {
-        'out_planes': [240,480,960],
-        'num_blocks': [4,8,4],
-        'groups': 3
-    }
-    return ShuffleNet(cfg)
+    return ShuffleNet_net(cfg)

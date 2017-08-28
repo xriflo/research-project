@@ -17,13 +17,15 @@ import argparse
 from models import *
 from utils import *
 from torch.autograd import Variable
-
+import matplotlib.pyplot as plt
+import matplotlib.pylab as plb
 
 
 parser = argparse.ArgumentParser(description='Posture estimation')
 
-parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
+parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
 parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
+parser.add_argument('--epochs', default=10, help='no of epochs')
 args = parser.parse_args()
 
 
@@ -46,16 +48,21 @@ testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False,
 
 net = DPN()
 
-if use_cuda:
-    net.cuda()
-    net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
-    cudnn.benchmark = True
-
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
 
 
-def train(epoch):
+models =    {
+            "DenseNet": DenseNet121, 
+            "DPN": DPN, 
+            "GoogLeNet": GoogLeNet, 
+            "LeNet": LeNet, 
+            "MobileNet": MobileNet, 
+            "ResNet": ResNet, 
+            "ResNeXt": ResNeXt, 
+            "ShuffleNet": ShuffleNet, 
+            "VGG": VGG
+            }
+
+def train(epoch, net):
     print('\nEpoch: %d' % epoch)
     net.train()
     train_loss = 0
@@ -78,8 +85,9 @@ def train(epoch):
 
     acc = 100.*correct/total
     print("train: ", acc)
+    return acc
 
-def test(epoch):
+def test(epoch, net):
     global best_acc
     net.eval()
     test_loss = 0
@@ -112,16 +120,32 @@ def test(epoch):
             os.mkdir('checkpoint')
         torch.save(state, './checkpoint/ckpt.t7')
         best_acc = acc
-'''
-batch_idx, (inputs, targets) = next(enumerate(trainloader))
-inputs, targets = inputs.cuda(), targets.cuda()
-inputs, targets = Variable(inputs, volatile=True), Variable(targets)
-print("before before: ", inputs.size())
-outputs = net(inputs)
-print("after after: ", outputs.size())
+    return acc
 
-'''
-for epoch in range(start_epoch, start_epoch+10):
-    train(epoch)
-    test(epoch)
 
+for name, model in models.items():
+    print("Training ", name, "...")
+    net = model()
+    if use_cuda:
+        net.cuda()
+        net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
+        cudnn.benchmark = True
+
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
+    train_acc = []
+    test_acc = []
+    for epoch in range(args.epochs):
+        tr_acc = train(epoch, net)
+        ts_acc = test(epoch, net)
+        train_acc.append(tr_acc)
+        test_acc.append(ts_acc)
+
+    plt.plot ( plb.arange(1,args.epochs+1),train_acc,color='g',label='train acc' )
+    plt.plot ( plb.arange(1,args.epochs+1),test_acc,color='r',label='test acc' )
+    plt.xlabel('No epochs')
+    plt.ylabel('Accuracy')
+    plt.title(name + ' - training and testing')
+    plt.legend(('train acc','test acc'))
+    plt.savefig("results/"+name+".png")
+    plt.clf()
