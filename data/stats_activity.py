@@ -48,19 +48,19 @@ def get_stats():
 			tag = next(iter(tag))
 			comm = "ls -1 " + folder + " | wc -l"
 			no_pics = int(commands.getoutput(comm))
+			if no_pics > 20:
+				no_pictures_per_class[tag] = no_pictures_per_class[tag] + no_pics
+				no_seq_per_class[tag] = no_seq_per_class[tag] + 1
+				mean_per_class[tag] = mean_per_class[tag] + no_pics
 
-			no_pictures_per_class[tag] = no_pictures_per_class[tag] + no_pics
-			no_seq_per_class[tag] = no_seq_per_class[tag] + 1
-			mean_per_class[tag] = mean_per_class[tag] + no_pics
+				if no_pics <= 10 and (tag=='up' or tag=='down' or tag=='falling'):
+					pass#print no_pics, ": ", folder
 
-			if no_pics <= 10 and tag=='sitting':
-				print folder
+				if no_pics < min_per_class[tag]:
+					min_per_class[tag] = no_pics
 
-			if no_pics < min_per_class[tag]:
-				min_per_class[tag] = no_pics
-
-			if no_pics > max_per_class[tag]:
-				max_per_class[tag] = no_pics
+				if no_pics > max_per_class[tag]:
+					max_per_class[tag] = no_pics
 
 
 	for tag in activity_tags:
@@ -71,12 +71,13 @@ def get_stats():
 		if len(tag)!=0:
 			tag = next(iter(tag))
 			comm = "ls -1 " + folder + " | wc -l"
-			no_pics = int(commands.getoutput(comm))
-			var_per_class[tag] = var_per_class[tag] + (no_pics - mean_per_class[tag])**2
+			if no_pics > 20:
+				no_pics = int(commands.getoutput(comm))
+				var_per_class[tag] = var_per_class[tag] + (no_pics - mean_per_class[tag])**2
 
 	for tag in activity_tags:
 		var_per_class[tag] = var_per_class[tag] / no_seq_per_class[tag]
-		std_per_class[tag] = math.sqrt(var_per_class[tag])
+		std_per_class[tag] = int(math.sqrt(var_per_class[tag]))
 
 
 	t = PrettyTable(['class', 'no of pictures per class', 'no of seq per class', 'min', 'max', 'mean', 'std', 'var'])
@@ -87,13 +88,4 @@ def get_stats():
 	print(t)
 
 
-'''
-			pics[tag] = pics[tag] + 1
-			comm = "ls -1 ./ " + folder + " | wc -l"
-			no_pics = int(commands.getoutput(comm))
-			pics[tag] = pics[tag] + no_pics
-			if tag == 'unknown':
-				print no_pics, ":", folder
-	print pics
-'''
 get_stats()
