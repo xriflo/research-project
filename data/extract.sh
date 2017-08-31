@@ -1,6 +1,6 @@
 #!/bin/bash
 
-RAW_FOLDER=~/workspace/flori/raw/
+RAW_FOLDER=~/workspace/flori/raw2/
 mkdir -p $RAW_FOLDER
 
 for f in `ls ~/workspace/flori/archives/*.tar.gz`; do

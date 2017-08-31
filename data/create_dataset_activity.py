@@ -1,11 +1,14 @@
 from random import randint
+from PIL import Image
 import os
 import commands
 
 NO_SEQ = 16
+WIDTH = 48
+HEIGHT = 42
 #rules for creating dataset
 activity_tags = set(["sitting", "standing", "walking", "up", "down"])
-path = "../../activity/raw_very_small"
+path = "../../activity/raw"
 new_path = path + "_activity"
 
 
@@ -30,11 +33,11 @@ rules['down'] = [
 				[30,float('inf'),2]
 				]
 rules['walking'] = [
-					[16,30,1], 
-					[30,100,2], 
+					[16,50,1], 
+					[50,100,2], 
 					[100,300,3], 
-					[300,100,6], 
-					[1000,float('inf'),62]
+					[300,1000,8],  
+					[1000,float('inf'),70]
 					]
 
 
@@ -53,6 +56,15 @@ def find_all_datasets():
 	for folder in folders:
 		datasets.add(folder.split('/')[5])
 	return datasets
+
+def create_dataset_structure():
+	datasets = find_all_datasets()
+	for tag in activity_tags:
+		for dataset in datasets:
+			path_to_create = new_path + "/" + tag + "/" + dataset
+			if not os.path.exists(path_to_create):
+				os.makedirs(path_to_create)
+
 
 def find_balanced_combinations(no_pics, how_many):
 	combinations = []
@@ -85,6 +97,7 @@ def get_leaf_folders():
 
 
 def create_dataset():
+	create_dataset_structure()
 	seq = 0
 	folders = get_leaf_folders()
 	for folder in folders:
@@ -96,15 +109,26 @@ def create_dataset():
 				dataset_name = folder.split('/')[5]
 				tag = next(iter(tag))
 				how_many = find_no_combinations(tag, no_pics)
+				#print "no_pics=", no_pics, "       how_many=", how_many, "      tag=", tag
 				combinations = find_balanced_combinations(no_pics, how_many)
+				
 				images_name = os.listdir(folder)
 				images_name.sort()
-
 				for combination in combinations:
 					seq = seq + 1 
-					new_activity = map(lambda i: images_name[i], combination)
-					print new_activity
+					img_names = map(lambda i: images_name[i], combination)
+					for img_name in img_names:
+						old_path_pic = folder + "/" + img_name
+						im = Image.open(old_path_pic)
+						im_format = im.format
+						im = im.convert("L")
+						im_resized = im.resize((WIDTH, HEIGHT), Image.ANTIALIAS)
+						new_base_path_pic = new_path + "/" + tag + "/" + dataset_name + "/" + str(seq) + "/"
+						new_path_pic = new_base_path_pic + img_name.split('.')[0] + "." + im_format.lower()
+						if not os.path.exists(new_base_path_pic):
+							os.makedirs(new_base_path_pic)
+						im_resized.save(new_path_pic, im_format)
 
-		break
 
-print(find_all_datasets())
+#print(find_balanced_combinations(93, 2))
+create_dataset()
