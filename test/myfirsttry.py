@@ -108,7 +108,25 @@ HEIGHT = 42
 NUM_CLASSES = 5
 NUM_FEATURES = 120
 
+class LeNet(nn.Module):
+    def __init__(self):
+        super(LeNet, self).__init__()
+        self.no_classes = 2
+        self.num_features = 120
+        self.conv1 = nn.Conv2d(3, 6, 5)
+        self.conv2 = nn.Conv2d(6, 16, 5)
+        self.fc1   = nn.Linear(1008, self.num_features)
 
+
+    def forward(self, x):
+        out = F.relu(self.conv1(x))
+        out = F.max_pool2d(out, 2)
+        out = F.relu(self.conv2(out))
+        out = F.max_pool2d(out, 2)
+        out = out.view(out.size(0), -1)
+        #print(out.size())
+        out = F.relu(self.fc1(out))
+        return out
 
 
 class CLSTM(nn.Module):
@@ -119,7 +137,7 @@ class CLSTM(nn.Module):
         self.no_channels = 3
         self.width = 48
         self.height = 42
-        self.cnn = GoogLeNet()
+        self.cnn = LeNet()
         self.rnn = nn.LSTM(NUM_FEATURES, NUM_CLASSES, 2)
         #self.lstm = 
     def forward(self, x):
@@ -146,6 +164,9 @@ optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=5
 #err = loss(last_output, target)
 #print(err)
 #err.backward()
+
+
+
 
 
 def train(epoch, net):
