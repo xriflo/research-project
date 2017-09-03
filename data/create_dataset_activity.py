@@ -4,12 +4,13 @@ import os
 import commands
 
 NO_SEQ = 16
+MAX_STEP = 3
 WIDTH = 48
 HEIGHT = 42
 #rules for creating dataset
 activity_tags = set(["sitting", "standing", "walking", "up", "down"])
 path = "../../activity/raw"
-new_path = path + "_activity"
+new_path = path + "_activity_ne2222"
 
 
 
@@ -24,10 +25,9 @@ rules['sitting'] = [
 					]
 rules['up'] = [
 				[16,30,1], 
-				[30,50,2], 
-				[50,100,2], 
+				[30,100,2], 
 				[100,float('inf'),3]
-					]
+				]
 rules['down'] = [
 				[16,30,1], 
 				[30,float('inf'),2]
@@ -66,6 +66,22 @@ def create_dataset_structure():
 				os.makedirs(path_to_create)
 
 
+def find_balanced_combinations_twist(tag, no_pics, how_many):
+	if tag!='walking' or (tag=='walking' and no_pics < 50):
+		return find_balanced_combinations(no_pics, how_many)
+	else:
+		combinations = []
+		for i in range(how_many):
+			combination = []
+			start = randint(0, no_pics - MAX_STEP*NO_SEQ)
+			combination.append(start)
+			for j in range(1, NO_SEQ):
+				start = start + randint(1, MAX_STEP)
+				combination.append(start)
+			combinations.append(combination)
+		return combinations
+
+
 def find_balanced_combinations(no_pics, how_many):
 	combinations = []
 
@@ -101,6 +117,7 @@ def create_dataset():
 	seq = 0
 	folders = get_leaf_folders()
 	for folder in folders:
+		episode = folder.split('/')[-3]
 		tag = activity_tags.intersection(folder.split('/'))
 		if len(tag)!=0:
 			comm = "ls -1 " + folder + " | wc -l"
@@ -108,12 +125,13 @@ def create_dataset():
 			if no_pics >= NO_SEQ:
 				dataset_name = folder.split('/')[5]
 				tag = next(iter(tag))
+
 				how_many = find_no_combinations(tag, no_pics)
-				#print "no_pics=", no_pics, "       how_many=", how_many, "      tag=", tag
-				combinations = find_balanced_combinations(no_pics, how_many)
+				combinations = find_balanced_combinations_twist(tag, no_pics, how_many)
 				
 				images_name = os.listdir(folder)
 				images_name.sort()
+
 				for combination in combinations:
 					seq = seq + 1 
 					img_names = map(lambda i: images_name[i], combination)
@@ -123,7 +141,7 @@ def create_dataset():
 						im_format = im.format
 						im = im.convert("L")
 						im_resized = im.resize((WIDTH, HEIGHT), Image.ANTIALIAS)
-						new_base_path_pic = new_path + "/" + tag + "/" + dataset_name + "/" + str(seq) + "/"
+						new_base_path_pic = new_path + "/" + tag + "/" + dataset_name + "/" + episode + "/" + str(seq) + "/"
 						new_path_pic = new_base_path_pic + img_name.split('.')[0] + "." + im_format.lower()
 						if not os.path.exists(new_base_path_pic):
 							os.makedirs(new_base_path_pic)

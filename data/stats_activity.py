@@ -4,8 +4,10 @@ import math
 from prettytable import PrettyTable
 
 activity_tags = set(["sitting", "standing", "walking", "up", "down"])
+#activity_tags = set(["sitting", "standing", "unknown", "walking", "up", "down", "falling"])
 
-path = "../../raw2"
+
+path = "../../activity/raw"
 
 
 def create_dicts():
@@ -73,7 +75,8 @@ def get_stats():
 			no_pictures_per_class[tag] = no_pictures_per_class[tag] + no_pics
 			no_seq_per_class[tag] = no_seq_per_class[tag] + 1
 			mean_per_class[tag] = mean_per_class[tag] + no_pics
-
+			if no_pics==0:
+				print folder
 			if no_pics < intervalA:
 				no_seq_0_A[tag] = no_seq_0_A[tag] + 1
 			elif no_pics >= intervalA and no_pics < intervalB:

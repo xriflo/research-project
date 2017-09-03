@@ -35,12 +35,12 @@ def get_leaf_folders(path):
 
 def get_type_folders(tags, path):
 	folders_path = get_leaf_folders(path)
- 	folders_path = list(filter(lambda folder_path: len(tags.intersection(folder_path.split('/'))) != 0, folders_path))
- 	return folders_path
+	folders_path = list(filter(lambda folder_path: len(tags.intersection(folder_path.split('/'))) != 0, folders_path))
+	return folders_path
 
 def compute_no_images(tags):
 	folders_path = get_type_folders(posture_tags)
- 	result = list(map(lambda folder_path: int(commands.getoutput("ls -1 " + folder_path + " | wc -l")), folders_path))
+	result = list(map(lambda folder_path: int(commands.getoutput("ls -1 " + folder_path + " | wc -l")), folders_path))
 	return reduce(lambda x, y: x+y, result)
 
 
@@ -56,7 +56,6 @@ def prepare_posture_dataset(path):
 
 	no_imgs = 0
 	for folder_path in folders_path:
-		print folder_path, "........"
 		img_type = "RGB"
 		target_class = next(iter(posture_tags.intersection(folder_path.split('/'))))
 		for img_name in os.listdir(folder_path):
