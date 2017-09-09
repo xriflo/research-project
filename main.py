@@ -14,6 +14,7 @@ import torchvision.datasets as datasets
 import os
 import argparse
 
+import numpy as np
 from models import *
 from utils import *
 from torch.autograd import Variable
@@ -48,7 +49,30 @@ testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False,
 
 net = DPN()
 
+def plot(raw_runs_tr, raw_runs_ts):
+    runs_tr = np.transpose(np.array(raw_runs_tr))
+    mean_runs_tr = np.mean(runs_tr, axis=1)
+    std_runs_tr = np.std(runs_tr, axis=1)
 
+    runs_ts = np.transpose(np.array(raw_runs_ts))
+    mean_runs_ts = np.mean(runs_ts, axis=1)
+    std_runs_ts = np.std(runs_ts, axis=1)
+
+    no_runs = runs_ts[:,0].shape
+
+    plt.grid()
+    plt.xlabel("No epochs")
+    plt.ylabel("Accuracy")
+    plt.xticks(1+np.arange(no_runs[0]))
+
+    plt.fill_between(1+np.arange(no_runs[0]), mean_runs_tr - std_runs_tr, mean_runs_tr + std_runs_tr, alpha=0.1, color="g")
+    plt.plot(1+np.arange(no_runs[0]), mean_runs_tr, 'o-', color="g", label="Training score")
+
+    plt.fill_between(1+np.arange(no_runs[0]), mean_runs_ts - std_runs_ts, mean_runs_ts + std_runs_ts, alpha=0.1, color="r")
+    plt.plot(1+np.arange(no_runs[0]), mean_runs_ts, 'o-', color="r", label="Test score")
+
+    plt.legend(loc="best")
+    return plt
 
 models =    {
             "DenseNet": DenseNet121, 
@@ -124,23 +148,30 @@ def test(epoch, net):
 
 
 for name, model in models.items():
-    print("Training ", name, "...")
-    net = model()
-    if use_cuda:
-        net.cuda()
-        net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
-        cudnn.benchmark = True
+    all_trains=[]
+    all_test = []
+    for run in range(10):
+        print("Training ", name, "...")
+        net = model()
+        if use_cuda:
+            net.cuda()
+            net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
+            cudnn.benchmark = True
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
-    train_acc = []
-    test_acc = []
-    for epoch in range(args.epochs):
-        tr_acc = train(epoch, net)
-        ts_acc = test(epoch, net)
-        train_acc.append(tr_acc)
-        test_acc.append(ts_acc)
-
+        criterion = nn.CrossEntropyLoss()
+        optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
+        train_acc = []
+        test_acc = []
+        for epoch in range(args.epochs):
+            tr_acc = train(epoch, net)
+            ts_acc = test(epoch, net)
+            train_acc.append(tr_acc)
+            test_acc.append(ts_acc)
+        all_trains.append(train_acc)
+        all_test.append(test_acc)
+    plt = plot(all_trains, all_test)
+    plt.savefig("results/"+name+".png")
+    '''
     plt.plot ( plb.arange(1,args.epochs+1),train_acc,color='g',label='train acc' )
     plt.plot ( plb.arange(1,args.epochs+1),test_acc,color='r',label='test acc' )
     plt.xlabel('No epochs')
@@ -149,3 +180,4 @@ for name, model in models.items():
     plt.legend(('train acc','test acc'))
     plt.savefig("results/"+name+".png")
     plt.clf()
+    '''

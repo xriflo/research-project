@@ -7,7 +7,7 @@ import os
 from torch.autograd import Variable
 import torch.optim as optim
 from random import randint
-from activityfolder import ActivityImageFolder
+from roselabfolder import ActivityImageFolder
 import torchvision.transforms as transforms
 
 class Inception(nn.Module):
@@ -163,9 +163,9 @@ transform_train = transforms.Compose([
 ])
 
 
-trainset = ActivityImageFolder("../activity/raw_activity_train", transform_train)
-testset = ActivityImageFolder("../activity/raw_activity_test", transform_train)
-
+trainset = ActivityImageFolder("../../archives_mihai/train_activity", transform_train)
+#testset = ActivityImageFolder("../../archives_mihai/test_activity", transform_train)
+'''
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=2)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=True, num_workers=2)
 
@@ -243,3 +243,4 @@ for epoch in range(10):
     ts_acc = test(epoch, net)
     print("train: ", tr_acc)
     print("test: ", ts_acc)
+'''

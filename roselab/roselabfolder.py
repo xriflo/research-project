@@ -30,18 +30,16 @@ def make_dataset(dir, class_to_idx):
     for target in sorted(os.listdir(dir)):
         t = os.path.join(dir, target)
         #print("target path: ", t)
-        for dataset in os.listdir(t):
-            d = os.path.join(t, dataset)
-            for sequence in os.listdir(d):
-                sequence_of_images = []
-                s = os.path.join(d, sequence)
-                for img_name in os.listdir(s):
-                    if is_image_file(img_name):
-                        img_path = os.path.join(s, img_name)
-                        sequence_of_images.append(img_path)
-                sequence_of_images.sort()
-                item = (sequence_of_images, class_to_idx[target])
-                images.append(item)
+        for sequence in os.listdir(t):
+            sequence_of_images = []
+            s = os.path.join(t, sequence)
+            for img_name in os.listdir(s):
+                if is_image_file(img_name):
+                    img_path = os.path.join(s, img_name)
+                    sequence_of_images.append(img_path)
+            sequence_of_images.sort()
+            item = (sequence_of_images, class_to_idx[target])
+            images.append(item)
 
     return images
 
@@ -93,6 +91,7 @@ class ActivityImageFolder(data.Dataset):
         #print(classes)
         #print(class_to_idx)
         seqs = make_dataset(root, class_to_idx)
+
         if len(seqs) == 0:
             raise(RuntimeError("Found 0 images in subfolders of: " + root + "\n"
                                "Supported image extensions are: " + ",".join(IMG_EXTENSIONS)))
